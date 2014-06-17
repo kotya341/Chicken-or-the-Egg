@@ -42,7 +42,6 @@ public class PrintDialogFragment extends BaseFragment {
     private WebView dialogWebView;
 
     private String title;
-    private Bitmap bitmap;
     private byte[] data;
     private MainActivityCallback mainActivityCallback;
 
@@ -64,7 +63,6 @@ public class PrintDialogFragment extends BaseFragment {
         if (getArguments() != null) {
             title = getArguments().getString("title");
             data = getArguments().getByteArray(Bitmap.class.getName());
-            bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
         }
 
     }

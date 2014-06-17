@@ -4,29 +4,26 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.widget.Toast;
 import com.example.chicken_or_the_egg.R;
 import com.example.chicken_or_the_egg.interfaces.MainActivityCallback;
 import com.example.chicken_or_the_egg.manager.App;
 import com.example.chicken_or_the_egg.ui.fragment.KitKatPrintDialogFragment;
 import com.example.chicken_or_the_egg.ui.fragment.MainFragment;
 import com.example.chicken_or_the_egg.ui.fragment.PrintDialogFragment;
-import com.google.zxing.WriterException;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
 
 public class MainActivity extends BaseActivity implements MainActivityCallback {
-    private static final int REQUEST_CODE_SCAN = 846;
-
-    private int scanCount = 0;
-    private int OFFSET_ASCII_POSITION = 65;
+    private final String START_SYMBOL = "A";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_container);
-        fragmentManager.beginTransaction().replace(R.id.container, MainFragment.newInstance(qrCodeContent())).commit();
-        onPrintFinishing();
+        fragmentManager.beginTransaction().replace(R.id.container, MainFragment.newInstance(START_SYMBOL)).commit();
     }
 
 
@@ -34,29 +31,35 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (scanResult != null) {
-            try {
-                startPrintFragment(App.zxingManager.encodeAsBitmap(scanResult.getContents()), scanResult.getContents());
-            } catch (WriterException e) {
-                e.printStackTrace();
-            }
+        if (scanResult != null && !TextUtils.isEmpty(scanResult.getContents())) {
+            startPrintFragment(App.zxingManager.generateQRCode(
+                            newQrCodeContent(scanResult.getContents())),
+                    scanResult.getContents());
         }
     }
 
-
-    private String qrCodeContent() {
-        return Character.toString((char) (scanCount + OFFSET_ASCII_POSITION));
+    /**
+     * generate next symbol in abc from current
+     * @param content current symbol
+     * @return next symbol in abc
+     */
+    private String newQrCodeContent(String content) {
+        int temp = (int) content.charAt(0);
+        return Character.toString((char) ++temp);
     }
 
     @Override
     public void onBitmapCreated(Bitmap bitmap, String title) {
-        scanCount++;
         startPrintFragment(bitmap, title);
     }
 
     private void startPrintFragment(Bitmap bitmap, String title) {
-        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
-        if (currentapiVersion >= Build.VERSION_CODES.KITKAT) {
+        if (bitmap == null) {
+            Toast.makeText(this, "Content is empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int currentApiVersion = android.os.Build.VERSION.SDK_INT;
+        if (currentApiVersion >= Build.VERSION_CODES.KITKAT) {
             fragmentManager.beginTransaction().replace(R.id.container, KitKatPrintDialogFragment.newInstance(title, bitmap)).commit();
         } else {
             fragmentManager.beginTransaction().replace(R.id.container, PrintDialogFragment.newInstance(title, bitmap)).commit();
@@ -67,7 +70,7 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
     @Override
     public void onPrintFinishing() {
         IntentIntegrator integrator = new IntentIntegrator(this);
-        integrator.initiateScan();
+        integrator.initiateScan(IntentIntegrator.QR_CODE_TYPES);
     }
 
 

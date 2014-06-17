@@ -2,77 +2,52 @@ package com.example.chicken_or_the_egg.manager;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.TypedValue;
+import android.graphics.Color;
+import android.net.Uri;
+import android.text.TextUtils;
+import android.util.Log;
 import com.google.zxing.BarcodeFormat;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.Writer;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.Date;
 
 /**
  * Created by Konstantin on 16.06.2014.
  */
 public class ZxingManager implements AppManagerInitializer {
-    private Context context;
     private final int WIDTH = 300;
     private final int HEIGHT = 300;
 
     @Override
     public void init(Context context) {
-        this.context = context;
 
     }
 
-    public Bitmap encodeAsBitmap(String contents) throws WriterException {
-        String contentsToEncode = contents;
-        if (contentsToEncode == null) {
+    public Bitmap generateQRCode(String data) {
+        long start = new Date().getTime();
+        Bitmap mBitmap = null;
+        Writer writer = new QRCodeWriter();
+        String finaldata = Uri.encode(data);
+        if (TextUtils.isEmpty(finaldata))
             return null;
-        }
-        Map<EncodeHintType, Object> hints = null;
-        String encoding = guessAppropriateEncoding(contentsToEncode);
-        if (encoding != null) {
-            hints = new EnumMap<EncodeHintType, Object>(EncodeHintType.class);
-            hints.put(EncodeHintType.CHARACTER_SET, encoding);
-        }
-        MultiFormatWriter writer = new MultiFormatWriter();
-        BitMatrix result;
         try {
-            result = writer.encode(contentsToEncode,
-                    BarcodeFormat.QR_CODE,
-                    (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, WIDTH, context.getResources().getDisplayMetrics()),
-                    (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, HEIGHT, context.getResources().getDisplayMetrics()),
-                    hints);
-        } catch (IllegalArgumentException iae) {
-            // Unsupported format
-            return null;
-        }
-        int width = result.getWidth();
-        int height = result.getHeight();
-        int[] pixels = new int[width * height];
-        for (int y = 0; y < height; y++) {
-            int offset = y * width;
-            for (int x = 0; x < width; x++) {
-                pixels[offset + x] = result.get(x, y) ? context.getResources().getColor(android.R.color.black) : context.getResources().getColor(android.R.color.white);
+            BitMatrix bm = writer.encode(finaldata, BarcodeFormat.QR_CODE, WIDTH, HEIGHT);
+            mBitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
+            for (int i = 0; i < WIDTH; i++) {
+                for (int j = 0; j < HEIGHT; j++) {
+                    mBitmap.setPixel(i, j, bm.get(i, j) ? Color.BLACK : Color.WHITE);
+                }
             }
+        } catch (WriterException e) {
+            e.printStackTrace();
         }
+        Log.e("content", finaldata);
+        Log.e("finish", String.valueOf(new Date().getTime() - start));
+        return mBitmap;
 
-        Bitmap bitmap = Bitmap.createBitmap(width, height,
-                Bitmap.Config.ARGB_8888);
-        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
-        return bitmap;
-    }
-
-    private static String guessAppropriateEncoding(CharSequence contents) {
-        // Very crude at the moment
-        for (int i = 0; i < contents.length(); i++) {
-            if (contents.charAt(i) > 0xFF) {
-                return "UTF-8";
-            }
-        }
-        return null;
     }
 
 }
