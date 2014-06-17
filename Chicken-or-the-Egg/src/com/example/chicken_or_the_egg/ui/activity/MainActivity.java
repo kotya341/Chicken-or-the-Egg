@@ -2,13 +2,17 @@ package com.example.chicken_or_the_egg.ui.activity;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import com.example.chicken_or_the_egg.R;
 import com.example.chicken_or_the_egg.interfaces.MainActivityCallback;
 import com.example.chicken_or_the_egg.manager.App;
+import com.example.chicken_or_the_egg.ui.fragment.KitKatPrintDialogFragment;
+import com.example.chicken_or_the_egg.ui.fragment.MainFragment;
 import com.example.chicken_or_the_egg.ui.fragment.PrintDialogFragment;
 import com.google.zxing.WriterException;
-import com.google.zxing.client.android.Intents;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 
 
 public class MainActivity extends BaseActivity implements MainActivityCallback {
@@ -21,7 +25,7 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_container);
-//        fragmentManager.beginTransaction().replace(R.id.container, MainFragment.newInstance(qrCodeContent())).commit();
+        fragmentManager.beginTransaction().replace(R.id.container, MainFragment.newInstance(qrCodeContent())).commit();
         onPrintFinishing();
     }
 
@@ -29,10 +33,10 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_SCAN && resultCode == RESULT_OK) {
-            String scanResult = data.getStringExtra("SCAN_RESULT");
+        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (scanResult != null) {
             try {
-                startPrintFragment(App.zxingManager.encodeAsBitmap(scanResult), scanResult);
+                startPrintFragment(App.zxingManager.encodeAsBitmap(scanResult.getContents()), scanResult.getContents());
             } catch (WriterException e) {
                 e.printStackTrace();
             }
@@ -51,14 +55,19 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
     }
 
     private void startPrintFragment(Bitmap bitmap, String title) {
-        fragmentManager.beginTransaction().replace(R.id.container, PrintDialogFragment.newInstance(title, bitmap)).commit();
+        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+        if (currentapiVersion >= Build.VERSION_CODES.KITKAT) {
+            fragmentManager.beginTransaction().replace(R.id.container, KitKatPrintDialogFragment.newInstance(title, bitmap)).commit();
+        } else {
+            fragmentManager.beginTransaction().replace(R.id.container, PrintDialogFragment.newInstance(title, bitmap)).commit();
+        }
+
     }
 
     @Override
     public void onPrintFinishing() {
-        Intent intent = new Intent(Intents.Scan.ACTION);
-        intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
-        startActivityForResult(intent, REQUEST_CODE_SCAN);
+        IntentIntegrator integrator = new IntentIntegrator(this);
+        integrator.initiateScan();
     }
 
 
