@@ -40,6 +40,7 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
 
     /**
      * generate next symbol in abc from current
+     *
      * @param content current symbol
      * @return next symbol in abc
      */
@@ -53,6 +54,14 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
         startPrintFragment(bitmap, title);
     }
 
+    /**
+     * Start Print Fragment.
+     * for android KitKat use PrintShopPrintDocumentAdapter and PrintManager
+     * for older version use old approach with WebView dialog and js requests
+     *
+     * @param bitmap Bitmap to print in remote google print service
+     * @param title  print title
+     */
     private void startPrintFragment(Bitmap bitmap, String title) {
         if (bitmap == null) {
             Toast.makeText(this, "Content is empty", Toast.LENGTH_SHORT).show();
@@ -60,7 +69,7 @@ public class MainActivity extends BaseActivity implements MainActivityCallback {
         }
         int currentApiVersion = android.os.Build.VERSION.SDK_INT;
         if (currentApiVersion >= Build.VERSION_CODES.KITKAT) {
-            fragmentManager.beginTransaction().replace(R.id.container, KitKatPrintDialogFragment.newInstance(title, bitmap)).commit();
+            fragmentManager.beginTransaction().replace(R.id.container, KitKatPrintDialogFragment.newInstance(bitmap)).commit();
         } else {
             fragmentManager.beginTransaction().replace(R.id.container, PrintDialogFragment.newInstance(title, bitmap)).commit();
         }

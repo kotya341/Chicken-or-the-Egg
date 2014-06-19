@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
  * Created by Konstantin on 17.06.2014.
  */
 public interface ImageAndTextContainer {
-    public String getText();
-
+    /** Called by PrintShopPrintDocumentAdapter when need to get bitmap content for printing */
     public Bitmap getImage();
 }

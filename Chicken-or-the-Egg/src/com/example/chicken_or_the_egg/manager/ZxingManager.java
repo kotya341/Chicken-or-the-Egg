@@ -12,8 +12,6 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
-import java.util.Date;
-
 /**
  * Created by Konstantin on 16.06.2014.
  */
@@ -26,15 +24,20 @@ public class ZxingManager implements AppManagerInitializer {
 
     }
 
+    /**
+     * generate qr code bitmap from existent String content
+     *
+     * @param data qr code content
+     * @return QrCode Bitmap with qr code data
+     */
     public Bitmap generateQRCode(String data) {
-        long start = new Date().getTime();
         Bitmap mBitmap = null;
         Writer writer = new QRCodeWriter();
-        String finaldata = Uri.encode(data);
-        if (TextUtils.isEmpty(finaldata))
+        String finalData = Uri.encode(data);
+        if (TextUtils.isEmpty(finalData))
             return null;
         try {
-            BitMatrix bm = writer.encode(finaldata, BarcodeFormat.QR_CODE, WIDTH, HEIGHT);
+            BitMatrix bm = writer.encode(finalData, BarcodeFormat.QR_CODE, WIDTH, HEIGHT);
             mBitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
             for (int i = 0; i < WIDTH; i++) {
                 for (int j = 0; j < HEIGHT; j++) {
@@ -44,8 +47,7 @@ public class ZxingManager implements AppManagerInitializer {
         } catch (WriterException e) {
             e.printStackTrace();
         }
-        Log.e("content", finaldata);
-        Log.e("finish", String.valueOf(new Date().getTime() - start));
+        Log.e("content", finalData);
         return mBitmap;
 
     }
